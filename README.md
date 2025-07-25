@@ -4,12 +4,34 @@ A local QR code-based attendance tracking system built with Flask backend and HT
 
 ## 🌟 Features
 
+- **Dual QR Code System**: Entry and Exit QR codes for complete check-in/check-out tracking
 - **QR Code Generation**: Automatically generates QR codes for attendance sessions
 - **Local Network Access**: Works on LAN, accessible from mobile devices
 - **Role-Based Access**: Admin, Instructor, and Participant roles
 - **SQLite Database**: Lightweight, file-based database
 - **CSV Export**: Export attendance data for analysis
 - **Mobile Friendly**: Responsive design for mobile devices
+
+## 🆕 Latest Updates (v2.1.0)
+
+### 🚪 Entry & Exit QR Code System
+- **Dual QR Codes**: Each session now generates separate Entry and Exit QR codes
+- **Check-in/Check-out Tracking**: Students scan Entry QR to check-in and Exit QR to check-out
+- **Enhanced Analytics**: Track entry time, exit time, and session duration
+- **Improved UI**: Toggle visibility for Entry/Exit QR codes with show/hide functionality
+- **Better Alignment**: Fixed QR code container overflow issues for perfect display
+- **Visual Indicators**: Color-coded Entry (green) and Exit (yellow) sections for easy identification
+
+<div align="center">
+  <img src="figures/qr.png" alt="Entry & Exit QR Codes" width="800">
+  <p><em>New dual QR code system with Entry/Exit functionality and toggle controls</em></p>
+</div>
+
+### 🎯 Benefits:
+- More accurate attendance tracking with entry/exit times
+- Better session management and duration tracking
+- Enhanced user experience with intuitive QR code display
+- Improved data collection for comprehensive analytics
 
 ## 📱 Application Screenshots
 
@@ -34,7 +56,7 @@ A local QR code-based attendance tracking system built with Flask backend and HT
 ### 📲 QR Code Display
 <div align="center">
   <img src="figures/qr.png" alt="QR Code Generation" width="800">
-  <p><em>Dynamic QR code generation for attendance sessions</em></p>
+  <p><em>Dual QR code system with separate Entry and Exit codes, featuring toggle visibility controls and color-coded sections</em></p>
 </div>
 
 ### 📈 Analytics Dashboard
@@ -194,12 +216,13 @@ netsh advfirewall firewall show rule name="FlaskLocal"
   - Export attendance data
 
 ### 📱 Student/Participant Access
-- **URL**: `/attend/<token>` (via QR code)
+- **URL**: `/attend/entry/<token>` or `/attend/exit/<token>` (via QR code)
 - **Access**: Public form
 - **Features**:
-  - Scan QR code
-  - Fill attendance form (Name, Surname)
-  - Submit attendance
+  - Scan Entry QR code to check-in at session start
+  - Scan Exit QR code to check-out at session end
+  - Fill attendance form (Name, Surname, Student ID)
+  - Submit attendance with timestamp tracking
 
 ## 📊 Creating Attendance Session
 
@@ -211,8 +234,11 @@ netsh advfirewall firewall show rule name="FlaskLocal"
    - Session title
    - Date and time
 5. Click "Generate QR Code"
-6. QR code will be saved in `/qr_codes/` folder
-7. Display QR code for students to scan
+6. Dual QR codes (Entry & Exit) will be generated and saved in `/qr_codes/` folder
+7. Display QR codes for students:
+   - **Entry QR**: Students scan to check-in (start of session)
+   - **Exit QR**: Students scan to check-out (end of session)
+8. Use toggle controls to show/hide specific QR codes as needed
 
 ## 📤 Exporting Data
 
@@ -220,7 +246,9 @@ netsh advfirewall firewall show rule name="FlaskLocal"
 2. Click "Export CSV" button
 3. File will download with attendance data including:
    - Student names
-   - Attendance time
+   - Entry time (check-in)
+   - Exit time (check-out)
+   - Session duration
    - IP addresses
    - Session details
 
