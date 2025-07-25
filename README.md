@@ -23,7 +23,7 @@ A local QR code-based attendance tracking system built with Flask backend and HT
 - **Visual Indicators**: Color-coded Entry (green) and Exit (yellow) sections for easy identification
 
 <div align="center">
-  <img src="figures/qr.png" alt="Entry & Exit QR Codes" width="800">
+  <img src="figures/qrv2.png" alt="Entry & Exit QR Codes" width="800">
   <p><em>New dual QR code system with Entry/Exit functionality and toggle controls</em></p>
 </div>
 

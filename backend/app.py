@@ -63,7 +63,8 @@ class Session(db.Model):
     __tablename__ = 'sessions'
     id = db.Column(db.Integer, primary_key=True)
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
-    token = db.Column(db.String(64), unique=True, nullable=False)
+    entry_token = db.Column(db.String(64), unique=True, nullable=False)  # Entry QR code token
+    exit_token = db.Column(db.String(64), unique=True, nullable=False)   # Exit QR code token
     session_name = db.Column(db.String(120), nullable=True)
     session_date = db.Column(db.DateTime, default=datetime.now)
     start_time = db.Column(db.DateTime, nullable=True)  # Scheduled start time
@@ -81,10 +82,12 @@ class Attendance(db.Model):
     surname = db.Column(db.String(120), nullable=False)
     student_id = db.Column(db.String(50), nullable=True)
     ip_address = db.Column(db.String(45), nullable=False)
-    attendance_time = db.Column(db.DateTime, default=datetime.now)
+    entry_time = db.Column(db.DateTime, nullable=True)    # When entered
+    exit_time = db.Column(db.DateTime, nullable=True)     # When exited
     course_name = db.Column(db.String(120), nullable=True)
     user_agent = db.Column(db.String(500), nullable=True) # Browser info
     status = db.Column(db.String(20), default='present')  # present, late, excused
+    duration_minutes = db.Column(db.Integer, nullable=True)  # Auto-calculated duration
 
 # Database initialization with existing data preservation
 def init_db():
@@ -505,28 +508,43 @@ def create_session():
     if not course:
         return jsonify({'error': 'Course not found'}), 404
         
-    token = secrets.token_urlsafe(16)
+    # Generate two separate tokens for entry and exit
+    entry_token = secrets.token_urlsafe(16)
+    exit_token = secrets.token_urlsafe(16)
+    
     session = Session(
         course_id=course_id, 
-        token=token,
+        entry_token=entry_token,
+        exit_token=exit_token,
         session_name=session_name,
         session_date=datetime.now()
     )
     db.session.add(session)
     db.session.commit()
     
-    # QR code content
+    # Generate QR codes for both entry and exit
     lan_ip = get_lan_ip()
-    qr_url = f"http://{lan_ip}:5000/attend/{token}"
-    qr_img = qrcode.make(qr_url)
-    qr_path = os.path.join(QR_CODES_DIR, f'{token}.png')
-    qr_img.save(qr_path)
+    
+    # Entry QR code
+    entry_url = f"http://{lan_ip}:5000/attend/entry/{entry_token}"
+    entry_qr_img = qrcode.make(entry_url)
+    entry_qr_path = os.path.join(QR_CODES_DIR, f'{entry_token}_entry.png')
+    entry_qr_img.save(entry_qr_path)
+    
+    # Exit QR code
+    exit_url = f"http://{lan_ip}:5000/attend/exit/{exit_token}"
+    exit_qr_img = qrcode.make(exit_url)
+    exit_qr_path = os.path.join(QR_CODES_DIR, f'{exit_token}_exit.png')
+    exit_qr_img.save(exit_qr_path)
     
     return jsonify({
         'session_id': session.id, 
-        'token': token, 
-        'qr_url': qr_url, 
-        'qr_image': f'/qr_codes/{token}.png',
+        'entry_token': entry_token,
+        'exit_token': exit_token,
+        'entry_qr_url': entry_url,
+        'exit_qr_url': exit_url,
+        'entry_qr_image': f'/qr_codes/{entry_token}_entry.png',
+        'exit_qr_image': f'/qr_codes/{exit_token}_exit.png',
         'session_name': session_name,
         'course_name': course.name
     })
@@ -656,10 +674,10 @@ ATTEND_FORM_HTML = '''
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>📝 Attendance Check-in</h2>
-        </div>
+         <div class="container">
+         <div class="header">
+             <h2>📝 {{ attendance_type or 'Attendance Check-in' }}</h2>
+         </div>
         <div class="course-info">
             <strong>Course:</strong> {{ course_name }}<br>
             <strong>Session:</strong> {{ session_name }}<br>
@@ -685,9 +703,9 @@ ATTEND_FORM_HTML = '''
                 <input type="text" name="student_id" id="student_id" placeholder="Enter your student ID (optional)">
             </div>
             
-            <button type="submit" id="submit-btn">
-                <span>✅ Submit Attendance</span>
-            </button>
+                         <button type="submit" id="submit-btn">
+                 <span>{% if 'ENTRY' in (attendance_type or '') %}🚪➡️ Check IN{% elif 'EXIT' in (attendance_type or '') %}🚪⬅️ Check OUT{% else %}✅ Submit Attendance{% endif %}</span>
+             </button>
         </form>
         
         {% if error %}<div class="error">❌ {{ error }}</div>{% endif %}
@@ -715,11 +733,11 @@ ATTEND_FORM_HTML = '''
 </html>
 '''
 
-@app.route('/attend/<token>', methods=['GET', 'POST'])
-def attend(token):
-    session_obj = Session.query.filter_by(token=token).first()
+@app.route('/attend/entry/<token>', methods=['GET', 'POST'])
+def attend_entry(token):
+    session_obj = Session.query.filter_by(entry_token=token).first()
     if not session_obj:
-        return 'Invalid session token', 404
+        return 'Invalid entry token', 404
         
     course = db.session.get(Course, session_obj.course_id)
     if not course:
@@ -733,39 +751,41 @@ def attend(token):
         surname = request.form.get('surname')
         student_id = request.form.get('student_id', '')
         ip_address = request.remote_addr
-        
-        # Get user agent
         user_agent = request.headers.get('User-Agent', '')
         
         if not name or not surname:
             error = 'Name and surname are required.'
         else:
-            # Check for duplicate attendance (same session + name + surname)
+            # Check if attendance record already exists
             existing = Attendance.query.filter_by(
                 session_id=session_obj.id, 
                 name=name, 
                 surname=surname
             ).first()
             
-            if existing:
-                error = 'You have already submitted attendance for this session.'
+            if existing and existing.entry_time:
+                error = 'You have already checked in for this session.'
             else:
-                # Create new attendance record
-                attendance = Attendance(
-                    session_id=session_obj.id,
-                    name=name,
-                    surname=surname,
-                    student_id=student_id,
-                    ip_address=ip_address,
-                                         attendance_time=datetime.now(),
-                    course_name=course.name,
-                    user_agent=user_agent
-                )
+                # Create or update attendance record for entry
+                if not existing:
+                    attendance = Attendance(
+                        session_id=session_obj.id,
+                        name=name,
+                        surname=surname,
+                        student_id=student_id,
+                        ip_address=ip_address,
+                        entry_time=datetime.now(),
+                        course_name=course.name,
+                        user_agent=user_agent
+                    )
+                    db.session.add(attendance)
+                else:
+                    existing.entry_time = datetime.now()
+                    existing.ip_address = ip_address
+                    existing.user_agent = user_agent
                 
-                db.session.add(attendance)
                 db.session.commit()
-                
-                success = f'Attendance submitted successfully for {course.name}!'
+                success = f'✅ Successfully checked IN to {course.name}!'
     
     return render_template_string(
         ATTEND_FORM_HTML,
@@ -773,6 +793,66 @@ def attend(token):
         session_name=session_obj.session_name,
         session_date=session_obj.session_date.strftime('%Y-%m-%d %H:%M') if session_obj.session_date else 'N/A',
         current_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        attendance_type='ENTRY / CHECK-IN',
+        error=error,
+        success=success
+    )
+
+@app.route('/attend/exit/<token>', methods=['GET', 'POST'])
+def attend_exit(token):
+    session_obj = Session.query.filter_by(exit_token=token).first()
+    if not session_obj:
+        return 'Invalid exit token', 404
+        
+    course = db.session.get(Course, session_obj.course_id)
+    if not course:
+        return 'Course not found', 404
+    
+    error = None
+    success = None
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        surname = request.form.get('surname')
+        student_id = request.form.get('student_id', '')
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent', '')
+        
+        if not name or not surname:
+            error = 'Name and surname are required.'
+        else:
+            # Find existing attendance record
+            existing = Attendance.query.filter_by(
+                session_id=session_obj.id, 
+                name=name, 
+                surname=surname
+            ).first()
+            
+            if not existing or not existing.entry_time:
+                error = 'You must check in first before checking out.'
+            elif existing.exit_time:
+                error = 'You have already checked out for this session.'
+            else:
+                # Update attendance record for exit
+                existing.exit_time = datetime.now()
+                existing.ip_address = ip_address  # Update with exit IP
+                
+                # Calculate duration in minutes
+                if existing.entry_time and existing.exit_time:
+                    duration = existing.exit_time - existing.entry_time
+                    existing.duration_minutes = int(duration.total_seconds() / 60)
+                
+                db.session.commit()
+                duration_text = f" (Duration: {existing.duration_minutes} minutes)" if existing.duration_minutes else ""
+                success = f'✅ Successfully checked OUT from {course.name}!{duration_text}'
+    
+    return render_template_string(
+        ATTEND_FORM_HTML,
+        course_name=course.name,
+        session_name=session_obj.session_name,
+        session_date=session_obj.session_date.strftime('%Y-%m-%d %H:%M') if session_obj.session_date else 'N/A',
+        current_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        attendance_type='EXIT / CHECK-OUT',
         error=error,
         success=success
     )
@@ -877,11 +957,14 @@ def get_sessions(course_id):
     return jsonify([
         {
             'id': s.id, 
-            'token': s.token,
+            'entry_token': s.entry_token,
+            'exit_token': s.exit_token,
             'session_name': s.session_name,
             'session_date': s.session_date.isoformat() if s.session_date else None,
             'is_active': s.is_active,
-            'attendance_count': len(s.attendances)
+            'attendance_count': len(s.attendances),
+            'checked_in_count': len([a for a in s.attendances if a.entry_time]),
+            'checked_out_count': len([a for a in s.attendances if a.exit_time])
         } for s in sessions
     ])
 
@@ -916,10 +999,10 @@ def export_session_csv(session_id):
     si = StringIO()
     writer = csv.writer(si)
     
-    # CSV headers without location data
+    # CSV headers with entry/exit tracking
     writer.writerow([
         'Name', 'Surname', 'Student ID', 'Course', 'Session', 
-        'Attendance Time', 'IP Address', 'Device/Browser', 'Status'
+        'Entry Time', 'Exit Time', 'Duration (minutes)', 'IP Address', 'Device/Browser', 'Status'
     ])
     
     for a in attendances:
@@ -940,7 +1023,9 @@ def export_session_csv(session_id):
             a.student_id or 'N/A',
             a.course_name,
             session_obj.session_name,
-            a.attendance_time.strftime('%Y-%m-%d %H:%M:%S') if a.attendance_time else 'N/A',
+            a.entry_time.strftime('%Y-%m-%d %H:%M:%S') if a.entry_time else 'Not checked in',
+            a.exit_time.strftime('%Y-%m-%d %H:%M:%S') if a.exit_time else 'Not checked out',
+            a.duration_minutes or 'N/A',
             a.ip_address,
             device_info,
             a.status or 'present'
@@ -970,7 +1055,7 @@ def analytics_dashboard():
         # Get recent activity (last 7 days) - fixed datetime deprecation
         week_ago = datetime.now() - timedelta(days=7)
         recent_attendances = Attendance.query.filter(
-            Attendance.attendance_time >= week_ago
+            Attendance.entry_time >= week_ago
         ).count()
         
         # Get top courses by attendance - fixed join ambiguity
@@ -989,12 +1074,13 @@ def analytics_dashboard():
         # Get attendance trends (last 30 days) - fixed datetime deprecation
         thirty_days_ago = datetime.now() - timedelta(days=30)
         attendance_trends = db.session.query(
-            db.func.date(Attendance.attendance_time).label('date'),
+            db.func.date(Attendance.entry_time).label('date'),
             db.func.count(Attendance.id).label('count')
         ).filter(
-            Attendance.attendance_time >= thirty_days_ago
+            Attendance.entry_time >= thirty_days_ago,
+            Attendance.entry_time.isnot(None)
         ).group_by(
-            db.func.date(Attendance.attendance_time)
+            db.func.date(Attendance.entry_time)
         ).order_by('date').all()
         
         return jsonify({
@@ -1040,17 +1126,23 @@ def course_analytics(course_id):
         # Get course sessions
         sessions = Session.query.filter_by(course_id=course_id).all()
         
-        # Get attendance statistics - fixed join syntax
+        # Get attendance statistics - fixed join syntax (only count those who checked in)
         total_attendances = db.session.query(Attendance).select_from(Attendance).join(
             Session, Attendance.session_id == Session.id
-        ).filter(Session.course_id == course_id).count()
+        ).filter(
+            Session.course_id == course_id,
+            Attendance.entry_time.isnot(None)
+        ).count()
         
-        # Get unique students - fixed join syntax
+        # Get unique students - fixed join syntax (only count those who checked in)
         unique_students = db.session.query(
             Attendance.name, Attendance.surname
         ).select_from(Attendance).join(
             Session, Attendance.session_id == Session.id
-        ).filter(Session.course_id == course_id).distinct().count()
+        ).filter(
+            Session.course_id == course_id,
+            Attendance.entry_time.isnot(None)
+        ).distinct().count()
         
         # Session attendance rates
         session_stats = []
@@ -1093,12 +1185,13 @@ def simple_analytics():
         total_sessions = Session.query.count()
         total_attendances = Attendance.query.count()
         
-        # Recent sessions (last 10)
+        # Recent sessions (last 10) with entry/exit counts
         recent_sessions = db.session.query(
             Session.session_name, 
             Course.name.label('course_name'),
             Session.session_date,
-            db.func.count(Attendance.id).label('attendance_count')
+            db.func.count(db.case([(Attendance.entry_time.isnot(None), Attendance.id)])).label('checked_in_count'),
+            db.func.count(db.case([(Attendance.exit_time.isnot(None), Attendance.id)])).label('checked_out_count')
         ).select_from(Session).join(
             Course, Session.course_id == Course.id
         ).outerjoin(
@@ -1119,7 +1212,8 @@ def simple_analytics():
                     'session_name': session[0] or 'Unnamed Session',
                     'course_name': session[1],
                     'date': session[2].isoformat() if session[2] else 'N/A',
-                    'attendance_count': session[3] or 0
+                    'checked_in_count': session[3] or 0,
+                    'checked_out_count': session[4] or 0
                 } for session in recent_sessions
             ]
         })
