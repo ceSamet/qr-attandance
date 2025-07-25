@@ -56,6 +56,7 @@
             <ul class="sidebar-menu">
                 <li><a href="#" id="dashboard-tab" class="active"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
                 <li><a href="#" id="courses-tab"><i class="fas fa-book"></i> Courses</a></li>
+                <li><a href="#" id="analytics-tab"><i class="fas fa-chart-bar"></i> Analytics</a></li>
                 <li id="users-menu-item" style="display:none;"><a href="#" id="users-tab"><i class="fas fa-users"></i> Users</a></li>
             </ul>
         </div>
@@ -105,13 +106,121 @@
                 </div>
             </div>
 
-            <!-- Users Tab (Admin Only) -->
+            <!-- Analytics Tab -->
+            <div id="analytics-content" class="content-section" style="display:none;">
+                <div class="page-header">
+                    <h2><i class="fas fa-chart-bar"></i> Analytics & Reports</h2>
+                    <div class="analytics-controls">
+                        <select id="analytics-period" class="form-select">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 3 months</option>
+                        </select>
+                        <button id="export-analytics-btn" class="btn btn-secondary">
+                            <i class="fas fa-download"></i> Export Report
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Analytics Cards -->
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <h3 id="analytics-total-attendances">0</h3>
+                            <p>Total Attendances</p>
+                            <span class="analytics-change" id="analytics-attendance-change">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <h3 id="analytics-active-sessions">0</h3>
+                            <p>Active Sessions</p>
+                            <span class="analytics-change positive" id="analytics-sessions-change">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <h3 id="analytics-avg-attendance">0</h3>
+                            <p>Avg. Attendance Rate</p>
+                            <span class="analytics-change" id="analytics-rate-change">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <h3 id="analytics-recent-activity">0</h3>
+                            <p>Recent Activity</p>
+                            <span class="analytics-change" id="analytics-activity-change">Today</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts Section -->
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Attendance Trends</h3>
+                            <div class="chart-controls">
+                                <button class="btn btn-sm btn-outline" data-chart="daily">Daily</button>
+                                <button class="btn btn-sm btn-outline active" data-chart="weekly">Weekly</button>
+                                <button class="btn btn-sm btn-outline" data-chart="monthly">Monthly</button>
+                            </div>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="attendance-trend-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Top Courses by Attendance</h3>
+                        </div>
+                        <div class="chart-content">
+                            <div id="top-courses-list" class="top-courses-list">
+                                <!-- Top courses will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activities -->
+                <div class="recent-activities">
+                    <h3>Recent Activities</h3>
+                    <div id="recent-activities-list" class="activities-list">
+                        <!-- Recent activities will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
             <div id="users-content" class="content-section" style="display:none;">
                 <div class="page-header">
                     <h2><i class="fas fa-users"></i> User Management</h2>
-                    <button id="add-user-btn" class="btn btn-primary">
-                        <i class="fas fa-user-plus"></i> Add Instructor
-                    </button>
+                    <div class="header-actions">
+                        <button id="download-template-btn" class="btn btn-secondary">
+                            <i class="fas fa-download"></i> Download CSV Template
+                        </button>
+                        <button id="bulk-import-btn" class="btn btn-success">
+                            <i class="fas fa-file-upload"></i> Bulk Import
+                        </button>
+                        <button id="add-user-btn" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add User
+                        </button>
+                    </div>
                 </div>
                 <div class="users-table-container">
                     <table class="users-table">
@@ -142,13 +251,29 @@
                 <span class="close">&times;</span>
             </div>
             <form id="course-form" class="modal-form">
-                <div class="input-group">
-                    <label>Course Name</label>
-                    <input type="text" id="course-name" required>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Course Name</label>
+                        <input type="text" id="course-name" required placeholder="e.g., Introduction to Programming">
+                    </div>
+                    <div class="input-group">
+                        <label>Course Code</label>
+                        <input type="text" id="course-code" placeholder="e.g., CS101" maxlength="10">
+                    </div>
                 </div>
                 <div class="input-group">
                     <label>Description</label>
-                    <textarea id="course-description" rows="3"></textarea>
+                    <textarea id="course-description" rows="3" placeholder="Course description and objectives..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Max Students</label>
+                        <input type="number" id="course-max-students" min="1" max="200" placeholder="30">
+                    </div>
+                    <div class="input-group">
+                        <label>Default Location</label>
+                        <input type="text" id="course-location" placeholder="e.g., Room A-101">
+                    </div>
                 </div>
                 <div class="modal-buttons">
                     <button type="button" class="btn btn-secondary" id="cancel-course">Cancel</button>
@@ -158,42 +283,115 @@
         </div>
     </div>
 
-    <!-- User Modal (Admin Only) -->
+    <!-- User Modal -->
     <div id="user-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Add New Instructor</h3>
+                <h3>Add New User</h3>
                 <span class="close">&times;</span>
             </div>
             <form id="user-form" class="modal-form">
-                <div class="input-group">
-                    <label>Full Name</label>
-                    <input type="text" id="user-fullname" required>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Full Name</label>
+                        <input type="text" id="user-fullname" required placeholder="e.g., John Smith">
+                    </div>
+                    <div class="input-group">
+                        <label>Username</label>
+                        <input type="text" id="user-username" required placeholder="e.g., john.smith">
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label>Username</label>
-                    <input type="text" id="user-username" required>
-                </div>
-                <div class="input-group">
-                    <label>Email</label>
-                    <input type="email" id="user-email" required>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" id="user-email" placeholder="e.g., john.smith@school.edu">
+                    </div>
+                    <div class="input-group">
+                        <label>Role</label>
+                        <select id="user-role" required>
+                            <option value="instructor">Instructor</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="input-group">
                     <label>Password</label>
-                    <input type="password" id="user-password" required>
-                </div>
-                <div class="input-group">
-                    <label>Role</label>
-                    <select id="user-role" required>
-                        <option value="instructor">Instructor</option>
-                        <option value="admin">Admin</option>
-                    </select>
+                    <input type="password" id="user-password" required placeholder="Enter secure password">
                 </div>
                 <div class="modal-buttons">
-                    <button type="button" class="btn btn-secondary" id="cancel-user">Cancel</button>
+                    <button type="button" id="cancel-user" class="btn btn-secondary">Cancel</button>
                     <button type="submit" class="btn btn-primary">Create User</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Bulk Import Modal -->
+    <div id="bulk-import-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Bulk Import Users</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-form">
+                <div class="import-instructions">
+                    <h4>📝 Instructions:</h4>
+                    <ul>
+                        <li>Download the CSV template to see the required format</li>
+                        <li>Required columns: <strong>username, password, full_name</strong></li>
+                        <li>Optional columns: <strong>email, role</strong> (defaults to instructor)</li>
+                        <li>Valid roles: <strong>admin, instructor</strong></li>
+                        <li>Maximum file size: 5MB</li>
+                    </ul>
+                </div>
+                
+                <div class="file-upload-area" id="file-upload-area">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drop your CSV file here or <strong>click to browse</strong></p>
+                        <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+                    </div>
+                </div>
+                
+                <div id="file-info" class="file-info" style="display: none;">
+                    <div class="file-details">
+                        <i class="fas fa-file-csv"></i>
+                        <span id="file-name"></span>
+                        <span id="file-size"></span>
+                    </div>
+                </div>
+                
+                <div id="import-progress" class="import-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <p id="progress-text">Processing...</p>
+                </div>
+                
+                <div id="import-results" class="import-results" style="display: none;">
+                    <div class="results-summary">
+                        <div class="result-item success">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="success-count">0</span> users created
+                        </div>
+                        <div class="result-item error">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="error-count">0</span> errors
+                        </div>
+                    </div>
+                    <div id="error-details" class="error-details" style="display: none;">
+                        <h5>Errors:</h5>
+                        <ul id="error-list"></ul>
+                    </div>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button type="button" id="cancel-import" class="btn btn-secondary">Cancel</button>
+                    <button type="button" id="upload-csv-btn" class="btn btn-primary" disabled>
+                        <i class="fas fa-upload"></i> Import Users
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -205,9 +403,11 @@
                 <span class="close">&times;</span>
             </div>
             <div class="sessions-content">
-                <button id="create-session-btn" class="btn btn-primary mb-3">
-                    <i class="fas fa-plus"></i> Create New Session
-                </button>
+                <div class="sessions-header">
+                    <button id="create-session-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create New Session
+                    </button>
+                </div>
                 <div id="sessions-list" class="sessions-grid">
                     <!-- Sessions will be loaded here -->
                 </div>
