@@ -568,16 +568,229 @@ body {
 
 .qr-code-container {
     margin: 20px 0;
+    max-width: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .qr-code-container img {
-    max-width: 250px;
+    max-width: 100%;
+    max-height: 250px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 .qr-actions {
     margin-top: 20px;
+}
+
+/* Dual QR Code Layout */
+.dual-qr-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin: 20px 0;
+    max-width: 100%;
+}
+
+.qr-section {
+    text-align: center;
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid;
+    max-width: 100%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.qr-section.entry-qr {
+    background: linear-gradient(135deg, #e8f5e8, #f0fff0);
+    border-color: #28a745;
+}
+
+.qr-section.exit-qr {
+    background: linear-gradient(135deg, #fff8e1, #fffbf0);
+    border-color: #ffc107;
+}
+
+.qr-section h4 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.qr-section.entry-qr h4 {
+    color: #155724;
+}
+
+.qr-section.exit-qr h4 {
+    color: #856404;
+}
+
+.qr-section .qr-code-container {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-width: 280px;
+    min-height: 280px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.entry-qr .qr-code-container img {
+    border: 2px solid #28a745;
+}
+
+.exit-qr .qr-code-container img {
+    border: 2px solid #ffc107;
+}
+
+.qr-instructions {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #2196f3;
+    margin: 15px 0;
+    font-size: 14px;
+    text-align: left;
+}
+
+.entry-text {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.exit-text {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+/* QR Toggle Buttons */
+.qr-toggle-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.qr-toggle-btn:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.qr-section.entry-qr .qr-toggle-btn:hover {
+    background: rgba(40, 167, 69, 0.2);
+}
+
+.qr-section.exit-qr .qr-toggle-btn:hover {
+    background: rgba(255, 193, 7, 0.2);
+}
+
+.qr-content-wrapper {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.qr-content-wrapper.hidden {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.qr-content-wrapper.visible {
+    max-height: 500px;
+    opacity: 1;
+}
+
+/* Toggle state indicators */
+.qr-toggle-btn .fa-eye-slash {
+    display: none;
+}
+
+.qr-section.hidden .qr-toggle-btn .fa-eye {
+    display: none;
+}
+
+.qr-section.hidden .qr-toggle-btn .fa-eye-slash {
+    display: inline;
+}
+
+@media (max-width: 768px) {
+    .dual-qr-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .qr-section .qr-code-container {
+        max-width: 250px;
+        min-height: 250px;
+    }
+    
+    .qr-section h4 {
+        font-size: 14px;
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .qr-section .qr-code-container {
+        max-width: 200px;
+        min-height: 200px;
+        padding: 10px;
+    }
+    
+    .dual-qr-container {
+        gap: 15px;
+    }
+    
+    .qr-section {
+        padding: 15px;
+    }
+}
+
+/* Session attendance breakdown */
+.attendance-breakdown {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.attendance-breakdown span {
+    font-size: 13px;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.entry-stat {
+    background: #d4edda !important;
+    border-color: #c3e6cb !important;
+    color: #155724 !important;
+}
+
+.exit-stat {
+    background: #fff3cd !important;
+    border-color: #ffeaa7 !important;
+    color: #856404 !important;
 }
 
 /* Utility Classes */

@@ -45,8 +45,10 @@ const createSessionBtn = document.getElementById('create-session-btn');
 
 // QR elements
 const qrModal = document.getElementById('qr-modal');
-const qrImage = document.getElementById('qr-image');
-const qrLink = document.getElementById('qr-link');
+const qrEntryImage = document.getElementById('qr-entry-image');
+const qrExitImage = document.getElementById('qr-exit-image');
+const qrEntryLink = document.getElementById('qr-entry-link');
+const qrExitLink = document.getElementById('qr-exit-link');
 const qrCourseName = document.getElementById('qr-course-name');
 const qrSessionName = document.getElementById('qr-session-name');
 
@@ -403,14 +405,18 @@ function displaySessions(sessions) {
                 <div class="session-date">${new Date(session.session_date).toLocaleString()}</div>
             </div>
             <div class="session-stats">
-                <span><i class="fas fa-users"></i> ${session.attendance_count} attendees</span>
+                <div class="attendance-breakdown">
+                    <span title="Total attendees"><i class="fas fa-users"></i> ${session.attendance_count || 0} total</span>
+                    <span title="Checked in" class="entry-stat"><i class="fas fa-sign-in-alt"></i> ${session.checked_in_count || 0} in</span>
+                    <span title="Checked out" class="exit-stat"><i class="fas fa-sign-out-alt"></i> ${session.checked_out_count || 0} out</span>
+                </div>
                 <span class="${session.is_active ? 'text-success' : 'text-danger'}">
                     <i class="fas fa-circle"></i> ${session.is_active ? 'Active' : 'Inactive'}
                 </span>
             </div>
             <div class="session-actions">
-                <button class="btn btn-primary btn-sm" onclick="showQRCode('${session.token}', '${session.session_name}')">
-                    <i class="fas fa-qrcode"></i> QR Code
+                <button class="btn btn-primary btn-sm" onclick="showSessionQRCodes('${session.entry_token}', '${session.exit_token}', '${session.session_name}')">
+                    <i class="fas fa-qrcode"></i> QR Codes
                 </button>
                 <button class="btn btn-success btn-sm" onclick="exportCSV(${session.id})">
                     <i class="fas fa-download"></i> Export CSV
@@ -446,8 +452,8 @@ async function createSession() {
             displaySessions(sessions);
             showAlert('Session created successfully!', 'success');
             
-            // Optionally show QR code immediately
-            showQRCode(sessionData.token, sessionData.session_name, sessionData.course_name);
+            // Optionally show QR codes immediately
+            showQRCode(sessionData.entry_token, sessionData.exit_token, sessionData.session_name, sessionData.course_name, sessionData.entry_qr_image, sessionData.exit_qr_image);
         } else {
             const error = await response.json();
             throw new Error(error.error || 'Failed to create session');
@@ -482,12 +488,47 @@ async function deleteSession(sessionId) {
     }
 }
 
-function showQRCode(token, sessionName, courseName) {
-    qrImage.src = `/qr_codes/${token}.png`;
-    qrLink.href = `/attend/${token}`;
+function showQRCode(entryToken, exitToken, sessionName, courseName, entryQrImage, exitQrImage) {
+    // Set entry QR code
+    qrEntryImage.src = entryQrImage || `/qr_codes/${entryToken}_entry.png`;
+    qrEntryLink.href = `/attend/entry/${entryToken}`;
+    
+    // Set exit QR code
+    qrExitImage.src = exitQrImage || `/qr_codes/${exitToken}_exit.png`;
+    qrExitLink.href = `/attend/exit/${exitToken}`;
+    
+    // Set session info
     qrSessionName.textContent = sessionName || 'Session';
     qrCourseName.textContent = courseName || 'Course';
+    
     showModal(qrModal);
+}
+
+// Helper function for showing QR codes from session list
+function showSessionQRCodes(entryToken, exitToken, sessionName) {
+    showQRCode(entryToken, exitToken, sessionName, 'Course', null, null);
+}
+
+// QR Code show/hide toggle function
+function toggleQRSection(section) {
+    const sectionElement = document.querySelector(`.qr-section.${section}-qr`);
+    const contentWrapper = document.getElementById(`${section}-qr-content`);
+    
+    if (!sectionElement || !contentWrapper) return;
+    
+    const isVisible = contentWrapper.classList.contains('visible');
+    
+    if (isVisible) {
+        // Hide the section
+        contentWrapper.classList.remove('visible');
+        contentWrapper.classList.add('hidden');
+        sectionElement.classList.add('hidden');
+    } else {
+        // Show the section
+        contentWrapper.classList.remove('hidden');
+        contentWrapper.classList.add('visible');
+        sectionElement.classList.remove('hidden');
+    }
 }
 
 async function exportCSV(sessionId) {
