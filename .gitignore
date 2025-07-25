@@ -136,10 +136,19 @@ qr_*.jpg
 qr_*.jpeg
 *_qr.*
 
-# Database files (keep schema, ignore data)
-*.db
-*.sqlite
-*.sqlite3
+# Keep figures directory for README screenshots
+!figures/
+!figures/*.png
+!figures/*.jpg
+!figures/*.jpeg
+
+# Database files (keep main DB, ignore temporary ones)
+*.db-journal
+*.db-wal
+*.db-shm
+test.db
+temp.db
+backup_*.db
 
 # IDE specific files
 .vscode/

@@ -11,6 +11,38 @@ A local QR code-based attendance tracking system built with Flask backend and HT
 - **CSV Export**: Export attendance data for analysis
 - **Mobile Friendly**: Responsive design for mobile devices
 
+## 📱 Application Screenshots
+
+### 🔐 Login Interface
+<div align="center">
+  <img src="figures/sign in page.png" alt="Login Page" width="800">
+  <p><em>Secure login interface for administrators and instructors</em></p>
+</div>
+
+### 📚 Course Management Dashboard
+<div align="center">
+  <img src="figures/course page.png" alt="Course Management" width="800">
+  <p><em>Comprehensive course and session management interface</em></p>
+</div>
+
+### 📊 Attendance Tracking
+<div align="center">
+  <img src="figures/attandance.png" alt="Attendance Dashboard" width="800">
+  <p><em>Real-time attendance monitoring and analytics</em></p>
+</div>
+
+### 📲 QR Code Display
+<div align="center">
+  <img src="figures/qr.png" alt="QR Code Generation" width="800">
+  <p><em>Dynamic QR code generation for attendance sessions</em></p>
+</div>
+
+### 📈 Analytics Dashboard
+<div align="center">
+  <img src="figures/analytics.png" alt="Analytics Dashboard" width="800">
+  <p><em>Comprehensive analytics and reporting interface with charts and insights</em></p>
+</div>
+
 ## 📁 Project Structure
 
 ```
@@ -21,6 +53,12 @@ qr-attendance/
 │   ├── index.html          # Main interface
 │   ├── style.css           # Styling
 │   └── main.js             # Frontend logic
+├── figures/                # Application screenshots
+│   ├── sign in page.png    # Login interface
+│   ├── course page.png     # Course management
+│   ├── attandance.png      # Attendance tracking
+│   ├── qr.png              # QR code display
+│   └── analytics.png       # Analytics dashboard
 ├── instance/
 │   └── attendance.db       # SQLite database
 ├── qr_codes/               # Generated QR code images

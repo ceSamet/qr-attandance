@@ -34,7 +34,7 @@ class User(db.Model):
     role = db.Column(db.String(20), nullable=False)  # admin (sudo-like), instructor (course management only)
     full_name = db.Column(db.String(120), nullable=True)
     email = db.Column(db.String(120), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     last_login = db.Column(db.DateTime, nullable=True)  # Track last login
     is_active = db.Column(db.Boolean, default=True)  # Account status
     courses = db.relationship('Course', backref='instructor', lazy=True)
@@ -53,7 +53,7 @@ class Course(db.Model):
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=True)
     instructor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     is_active = db.Column(db.Boolean, default=True)  # Course status
     course_code = db.Column(db.String(20), nullable=True)  # Course code like "CS101"
     max_students = db.Column(db.Integer, nullable=True)  # Max enrollment
@@ -65,7 +65,7 @@ class Session(db.Model):
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
     token = db.Column(db.String(64), unique=True, nullable=False)
     session_name = db.Column(db.String(120), nullable=True)
-    session_date = db.Column(db.DateTime, default=datetime.utcnow)
+    session_date = db.Column(db.DateTime, default=datetime.now)
     start_time = db.Column(db.DateTime, nullable=True)  # Scheduled start time
     end_time = db.Column(db.DateTime, nullable=True)    # Scheduled end time
     is_active = db.Column(db.Boolean, default=True)
@@ -81,20 +81,34 @@ class Attendance(db.Model):
     surname = db.Column(db.String(120), nullable=False)
     student_id = db.Column(db.String(50), nullable=True)
     ip_address = db.Column(db.String(45), nullable=False)
-    attendance_time = db.Column(db.DateTime, default=datetime.utcnow)
+    attendance_time = db.Column(db.DateTime, default=datetime.now)
     course_name = db.Column(db.String(120), nullable=True)
     user_agent = db.Column(db.String(500), nullable=True) # Browser info
     status = db.Column(db.String(20), default='present')  # present, late, excused
 
-# Database initialization with enhanced data and migration support
+# Database initialization with existing data preservation
 def init_db():
     with app.app_context():
-        # Drop all tables and recreate from scratch for clean start
-        db.drop_all()
+        # Create tables only if they don't exist
         db.create_all()
-        print("Database tables created fresh!")
+        print("Database tables checked/created!")
         
-        # Create default admin and instructor users
+        # Check if admin user already exists
+        existing_admin = User.query.filter_by(username='admin').first()
+        if existing_admin:
+            print("Database already initialized - preserving existing data!")
+            print("Database status - ENHANCED ATTENDANCE SYSTEM:")
+            print("👨‍💼 Admin: username=admin")
+            print("👨‍🏫 Instructor: username=instructor")
+            print("📱 Students: NO LOGIN - Only QR Code Access")
+            print("🔒 Password Security: ENABLED")
+            print("📊 Analytics: ENABLED")
+            print(f"Total users: {User.query.count()}")
+            print(f"Total courses: {Course.query.count()}")
+            print(f"Total sessions: {Session.query.count()}")
+            return
+        
+        # Create default admin and instructor users (only if they don't exist)
         admin = User(
             username='admin', 
             role='admin',
@@ -150,7 +164,7 @@ def init_db():
         db.session.commit()
         print("Sample courses created!")
         
-        print("Database initialized - ENHANCED ATTENDANCE SYSTEM:")
+        print("Database initialized fresh - ENHANCED ATTENDANCE SYSTEM:")
         print("👨‍💼 Admin: username=admin, password=admin123")
         print("👨‍🏫 Instructor: username=instructor, password=instructor123")
         print("📱 Students: NO LOGIN - Only QR Code Access")
@@ -211,7 +225,7 @@ def login():
     flask_session['role'] = user.role
     flask_session['username'] = user.username
     flask_session['full_name'] = user.full_name
-    user.last_login = datetime.utcnow()
+    user.last_login = datetime.now()
     db.session.commit()
     return jsonify({
         'id': user.id, 
@@ -496,7 +510,7 @@ def create_session():
         course_id=course_id, 
         token=token,
         session_name=session_name,
-        session_date=datetime.utcnow()
+        session_date=datetime.now()
     )
     db.session.add(session)
     db.session.commit()
@@ -743,7 +757,7 @@ def attend(token):
                     surname=surname,
                     student_id=student_id,
                     ip_address=ip_address,
-                    attendance_time=datetime.utcnow(),
+                                         attendance_time=datetime.now(),
                     course_name=course.name,
                     user_agent=user_agent
                 )
@@ -953,23 +967,27 @@ def analytics_dashboard():
         total_attendances = Attendance.query.count()
         active_sessions = Session.query.filter_by(is_active=True).count()
         
-        # Get recent activity (last 7 days)
-        week_ago = datetime.utcnow() - timedelta(days=7)
+        # Get recent activity (last 7 days) - fixed datetime deprecation
+        week_ago = datetime.now() - timedelta(days=7)
         recent_attendances = Attendance.query.filter(
             Attendance.attendance_time >= week_ago
         ).count()
         
-        # Get top courses by attendance
-        top_courses = db.session.query(
+        # Get top courses by attendance - fixed join ambiguity
+        top_courses_result = db.session.query(
             Course.name, 
             Course.course_code,
             db.func.count(Attendance.id).label('attendance_count')
-        ).join(Session).join(Attendance).group_by(Course.id).order_by(
+        ).select_from(Course).join(
+            Session, Course.id == Session.course_id
+        ).join(
+            Attendance, Session.id == Attendance.session_id
+        ).group_by(Course.id, Course.name, Course.course_code).order_by(
             db.func.count(Attendance.id).desc()
         ).limit(5).all()
         
-        # Get attendance trends (last 30 days)
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        # Get attendance trends (last 30 days) - fixed datetime deprecation
+        thirty_days_ago = datetime.now() - timedelta(days=30)
         attendance_trends = db.session.query(
             db.func.date(Attendance.attendance_time).label('date'),
             db.func.count(Attendance.id).label('count')
@@ -990,13 +1008,13 @@ def analytics_dashboard():
             'top_courses': [
                 {
                     'name': course[0],
-                    'code': course[1],
+                    'code': course[1] if course[1] else 'N/A',
                     'attendance_count': course[2]
-                } for course in top_courses
+                } for course in top_courses_result
             ],
             'attendance_trends': [
                 {
-                    'date': trend[0],
+                    'date': str(trend[0]) if trend[0] else 'N/A',
                     'count': trend[1]
                 } for trend in attendance_trends
             ]
@@ -1022,23 +1040,24 @@ def course_analytics(course_id):
         # Get course sessions
         sessions = Session.query.filter_by(course_id=course_id).all()
         
-        # Get attendance statistics
-        total_attendances = Attendance.query.join(Session).filter(
-            Session.course_id == course_id
-        ).count()
+        # Get attendance statistics - fixed join syntax
+        total_attendances = db.session.query(Attendance).select_from(Attendance).join(
+            Session, Attendance.session_id == Session.id
+        ).filter(Session.course_id == course_id).count()
         
+        # Get unique students - fixed join syntax
         unique_students = db.session.query(
             Attendance.name, Attendance.surname
-        ).join(Session).filter(
-            Session.course_id == course_id
-        ).distinct().count()
+        ).select_from(Attendance).join(
+            Session, Attendance.session_id == Session.id
+        ).filter(Session.course_id == course_id).distinct().count()
         
         # Session attendance rates
         session_stats = []
         for session in sessions:
             attendance_count = len(session.attendances)
             session_stats.append({
-                'session_name': session.session_name,
+                'session_name': session.session_name or f'Session {session.id}',
                 'date': session.session_date.isoformat() if session.session_date else None,
                 'attendance_count': attendance_count,
                 'is_active': session.is_active
@@ -1047,21 +1066,75 @@ def course_analytics(course_id):
         return jsonify({
             'course': {
                 'name': course.name,
-                'code': course.course_code,
-                'description': course.description,
-                'max_students': course.max_students
+                'code': course.course_code or 'N/A',
+                'description': course.description or 'No description',
+                'max_students': course.max_students or 0
             },
             'statistics': {
                 'total_sessions': len(sessions),
                 'total_attendances': total_attendances,
                 'unique_students': unique_students,
-                'average_attendance': total_attendances / len(sessions) if sessions else 0
+                'average_attendance': round(total_attendances / len(sessions), 2) if sessions else 0
             },
             'sessions': session_stats
         })
     except Exception as e:
         print(f"Course analytics error: {str(e)}")
         return jsonify({'error': 'Failed to fetch course analytics'}), 500
+
+# Simple analytics endpoint as fallback
+@app.route('/api/analytics/simple', methods=['GET'])
+@login_required()
+def simple_analytics():
+    """Simplified analytics that always works"""
+    try:
+        # Basic counts
+        total_courses = Course.query.count()
+        total_sessions = Session.query.count()
+        total_attendances = Attendance.query.count()
+        
+        # Recent sessions (last 10)
+        recent_sessions = db.session.query(
+            Session.session_name, 
+            Course.name.label('course_name'),
+            Session.session_date,
+            db.func.count(Attendance.id).label('attendance_count')
+        ).select_from(Session).join(
+            Course, Session.course_id == Course.id
+        ).outerjoin(
+            Attendance, Session.id == Attendance.session_id
+        ).group_by(Session.id).order_by(
+            Session.session_date.desc()
+        ).limit(10).all()
+        
+        return jsonify({
+            'success': True,
+            'basic_stats': {
+                'total_courses': total_courses,
+                'total_sessions': total_sessions,
+                'total_attendances': total_attendances
+            },
+            'recent_sessions': [
+                {
+                    'session_name': session[0] or 'Unnamed Session',
+                    'course_name': session[1],
+                    'date': session[2].isoformat() if session[2] else 'N/A',
+                    'attendance_count': session[3] or 0
+                } for session in recent_sessions
+            ]
+        })
+    except Exception as e:
+        print(f"Simple analytics error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'basic_stats': {
+                'total_courses': 0,
+                'total_sessions': 0,
+                'total_attendances': 0
+            },
+            'recent_sessions': []
+        })
 
 if __name__ == '__main__':
     # Initialize database on startup
