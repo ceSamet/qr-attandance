@@ -317,38 +317,61 @@ body {
 .btn-primary {
     background: #667eea;
     color: white;
+    border: 1px solid #667eea;
 }
 
 .btn-primary:hover {
     background: #5a67d8;
+    border-color: #4c63d2;
     transform: translateY(-2px);
 }
 
 .btn-secondary {
     background: #6c757d;
     color: white;
+    border: 1px solid #6c757d;
 }
 
 .btn-secondary:hover {
     background: #5a6268;
+    border-color: #545b62;
+    transform: translateY(-2px);
 }
 
 .btn-success {
     background: #28a745;
     color: white;
+    border: 1px solid #28a745;
 }
 
 .btn-success:hover {
     background: #218838;
+    border-color: #1e7e34;
+    transform: translateY(-2px);
 }
 
 .btn-danger {
     background: #dc3545;
     color: white;
+    border: 1px solid #dc3545;
 }
 
 .btn-danger:hover {
     background: #c82333;
+    border-color: #bd2130;
+    transform: translateY(-2px);
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+    border: 1px solid #ffc107;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+    border-color: #d39e00;
+    transform: translateY(-2px);
 }
 
 .btn-sm {

@@ -501,7 +501,31 @@ function showQRCode(entryToken, exitToken, sessionName, courseName, entryQrImage
     qrSessionName.textContent = sessionName || 'Session';
     qrCourseName.textContent = courseName || 'Course';
     
+    // Reset QR sections to default state (Entry visible, Exit hidden)
+    resetQRSections();
+    
     showModal(qrModal);
+}
+
+// Reset QR sections to default state
+function resetQRSections() {
+    // Show Entry section
+    const entrySection = document.querySelector('.qr-section.entry-qr');
+    const entryContent = document.getElementById('entry-qr-content');
+    if (entrySection && entryContent) {
+        entrySection.classList.remove('hidden');
+        entryContent.classList.remove('hidden');
+        entryContent.classList.add('visible');
+    }
+    
+    // Hide Exit section
+    const exitSection = document.querySelector('.qr-section.exit-qr');
+    const exitContent = document.getElementById('exit-qr-content');
+    if (exitSection && exitContent) {
+        exitSection.classList.add('hidden');
+        exitContent.classList.remove('visible');
+        exitContent.classList.add('hidden');
+    }
 }
 
 // Helper function for showing QR codes from session list
