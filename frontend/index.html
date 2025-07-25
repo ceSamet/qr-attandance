@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Attendance System</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="login-section" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <i class="fas fa-qrcode"></i>
+                <h1>QR Attendance System</h1>
+                <p>Professional Attendance Management</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" placeholder="Username" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Sign In
+                </button>
+                <div id="login-error" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-section" style="display:none;">
+        <!-- Navigation Header -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-qrcode"></i>
+                <span>QR Attendance</span>
+            </div>
+            <div class="nav-user">
+                <span id="user-name">Welcome!</span>
+                <button id="logout-btn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </nav>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="#" id="dashboard-tab" class="active"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
+                <li><a href="#" id="courses-tab"><i class="fas fa-book"></i> Courses</a></li>
+                <li id="users-menu-item" style="display:none;"><a href="#" id="users-tab"><i class="fas fa-users"></i> Users</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-content" class="content-section">
+                <div class="page-header">
+                    <h2><i class="fas fa-chart-pie"></i> Dashboard</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-book"></i>
+                        <div class="stat-info">
+                            <h3 id="total-courses">0</h3>
+                            <p>Total Courses</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-calendar-alt"></i>
+                        <div class="stat-info">
+                            <h3 id="total-sessions">0</h3>
+                            <p>Total Sessions</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <div class="stat-info">
+                            <h3 id="total-attendances">0</h3>
+                            <p>Total Attendances</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Courses Tab -->
+            <div id="courses-content" class="content-section" style="display:none;">
+                <div class="page-header">
+                    <h2><i class="fas fa-book"></i> Courses Management</h2>
+                    <button id="add-course-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Course
+                    </button>
+                </div>
+                <div class="courses-grid" id="courses-grid">
+                    <!-- Courses will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Users Tab (Admin Only) -->
+            <div id="users-content" class="content-section" style="display:none;">
+                <div class="page-header">
+                    <h2><i class="fas fa-users"></i> User Management</h2>
+                    <button id="add-user-btn" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Add Instructor
+                    </button>
+                </div>
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Full Name</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Modal -->
+    <div id="course-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Course</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="course-form" class="modal-form">
+                <div class="input-group">
+                    <label>Course Name</label>
+                    <input type="text" id="course-name" required>
+                </div>
+                <div class="input-group">
+                    <label>Description</label>
+                    <textarea id="course-description" rows="3"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" id="cancel-course">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Modal (Admin Only) -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Instructor</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="user-form" class="modal-form">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="user-fullname" required>
+                </div>
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="user-username" required>
+                </div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="user-email" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="user-password" required>
+                </div>
+                <div class="input-group">
+                    <label>Role</label>
+                    <select id="user-role" required>
+                        <option value="instructor">Instructor</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" id="cancel-user">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sessions Modal -->
+    <div id="sessions-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="sessions-modal-title">Course Sessions</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="sessions-content">
+                <button id="create-session-btn" class="btn btn-primary mb-3">
+                    <i class="fas fa-plus"></i> Create New Session
+                </button>
+                <div id="sessions-list" class="sessions-grid">
+                    <!-- Sessions will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qr-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Session QR Code</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="qr-content">
+                <div class="qr-info">
+                    <p><strong>Course:</strong> <span id="qr-course-name"></span></p>
+                    <p><strong>Session:</strong> <span id="qr-session-name"></span></p>
+                </div>
+                <div class="qr-code-container">
+                    <img id="qr-image" src="" alt="QR Code">
+                </div>
+                <div class="qr-actions">
+                    <a id="qr-link" href="#" target="_blank" class="btn btn-secondary">
+                        <i class="fas fa-external-link-alt"></i> Open Form
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html> 
